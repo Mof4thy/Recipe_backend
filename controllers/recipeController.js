@@ -1,0 +1,467 @@
+
+
+const Recipe  = require('../models/recipeModel')
+const mongoose = require('mongoose');
+
+
+
+// route:   POST /api/recipes/add
+// Create a new recipe
+// private (auth middleware required)
+// param   title, description, ingredients, steps, image, cuisine, cookingTime, nutritionalFacts
+// param   userId (from auth middleware)
+const createRecipe = async (req, res) => {
+
+    try {
+
+        const { title, description, ingredients, steps, image, cuisine, cookingTime, nutritionalFacts } = req.body;
+        const userId = req.user._id; // Assuming you have user ID from the request
+
+        if (!title || !ingredients?.length || !steps?.length) {
+            return res.status(400).json({ message: 'Title, ingredients, and steps are required' });
+        }
+  
+        const recipe = await Recipe.create({
+            user: userId,
+            title,
+            description,
+            ingredients,
+            steps,
+            image,
+            cuisine,
+            cookingTime,
+            nutritionalFacts
+        });
+
+        const savedRecipe = await recipe.save();
+        
+        if (!savedRecipe) {
+            return res.status(400).json({ message: 'Failed to save recipe' });
+        }
+
+        res.status(201).json("Recipe created successfully");
+
+    } catch (error) {
+        console.error("Error creating recipe:", error);
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+}
+
+//  route:   GET /api/recipes
+//  Get all recipes
+//  public
+//  param   userId (from auth middleware)
+//  param   recipeId (from request params)
+const getallRecipes = async (req, res) => {
+
+    try{
+        const recipes = await Recipe.find({}).populate('user', 'name email');
+        if (!recipes) {
+            return res.status(404).json({ message: 'No recipes found' });
+        }
+        res.status(200).json(recipes);
+    }
+    catch (error) {
+        console.error("Error fetching recipes:", error);
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+}
+
+
+// route:   GET /api/recipes/?id=recipeId
+// Get a recipe by ID
+// public
+// param   recipeId (from request params)
+// param   userId (from auth middleware)
+const getRecipeById = async (req, res) => {
+
+    try {
+        const recipeId = req.params.id
+
+        console.log(recipeId)
+
+        if( !mongoose.Types.ObjectId.isValid(recipeId)) {
+            return res.status(400).json({ message: 'Invalid recipe ID' });
+        }
+
+        const recipe = await Recipe.findById(recipeId)
+        .populate('user', 'username email')
+        .populate('comments.user', 'username')
+        .populate('reviews.user', 'username');
+  
+        if (!recipe) {
+            return res.status(404).json({ message: 'Recipe not found' });
+        }
+
+        res.status(200).json(recipe);
+
+    } catch (error) {
+        
+        console.error("Error fetching recipe:", error);
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+}
+
+//  route:  PUT /api/recipes/:id
+//  Update a recipe by ID   
+//  private (auth middleware required)
+//  param   recipeId, updatedFields (from request body)
+//  param   userId (from auth middleware)
+const updaterecipe= async (req,res)=>{
+
+    try {
+
+        const updatedFields = req.body;
+        const recipeId = req.params.id; 
+        const userId = req.user._id; 
+        
+        if( !mongoose.Types.ObjectId.isValid(recipeId)) {
+            return res.status(400).json({ message: 'Invalid recipe ID' });
+        }
+
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json({ message: 'Invalid user ID' });
+        }
+
+        const recipe = await Recipe.findById(recipeId);
+
+        if (!recipe) {
+            return res.status(404).json({ message: 'Recipe not found' });
+        }
+
+        if(recipe.user.toString() !== userId.toString()) {
+            return res.status(403).json({ message: 'Not authorized to update this recipe' });
+        }
+
+        Object.assign(recipe, updatedFields);
+        const updatedRecipe  = await recipe.save();
+
+        res.status(200).json(updatedRecipe);
+
+    } catch (error) {
+        console.error("Error updating recipe:", error);
+        res.status(500).json({ message: "Server error", error: error.message });   
+    }
+} 
+
+
+// route:   DELETE /api/recipes/:id
+// Delete a recipe by ID
+// private (auth middleware required)
+// param   recipeId
+const deleterecipe = async (req,res) =>{
+
+    try {
+        const recipeId = req.params.id; 
+        const userId = req.user._id; 
+
+        if( !mongoose.Types.ObjectId.isValid(recipeId)) {
+            return res.status(400).json({ message: 'Invalid recipe ID' });
+        }
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json({ message: 'Invalid user ID' });
+        }
+        const recipe = await Recipe.findById(recipeId);
+
+        if (!recipe) {
+            return res.status(404).json({ message: 'Recipe not found' });
+        }
+
+        if(recipe.user.toString() !== userId.toString()) {
+            return res.status(403).json({ message: 'Not authorized to update this recipe' });
+        }
+
+        await recipe.deleteOne();
+
+        res.json({ message: 'Recipe deleted successfully' });
+
+
+    } catch (error) {
+        console.error("Error deleting recipe:", error);
+        res.status(500).json({ message: "Server error", error: error.message });   
+        
+    }
+
+}
+
+
+// route:   GET /api/recipes/user/:id
+// Get all recipes by user ID
+// private (auth middleware required)
+// param   userId
+const getUserRecipes = async (req, res) => {
+
+    try {
+        const userId = req.params.id; 
+        if( !mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json({ message: 'Invalid user ID' });
+        }
+
+        const recipes = await Recipe.find({ user: userId }).populate('user', 'name email');
+        
+        if (!recipes || recipes.length === 0) {
+            return res.status(404).json({ message: 'No recipes found for this user' });
+        }
+        res.status(200).json(recipes);
+
+    } catch (error) {
+        
+        console.error("Error fetching user recipes:", error);
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+}
+
+
+
+
+
+// route:   POST /api/recipes/:id/like
+// Toggle like status for a recipe
+// private (auth middleware required)
+// param   recipeId
+// param   userId (from auth middleware)
+const toggleLikeRecipe = async (req, res) => {
+
+    try {
+        const  recipeId  = req.params.id;
+        const userId = req.user._id;
+
+        if (!mongoose.Types.ObjectId.isValid(recipeId)) {
+            return res.status(400).json({ message: 'Invalid recipe ID' });
+        }
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json({ message: 'Invalid user ID' });
+        }
+
+        const recipe = await Recipe.findById(recipeId);
+
+        if (!recipe) {
+          return res.status(404).json({ message: 'Recipe not found' });
+        }
+        const alreadyliked = recipe.likes.includes(userId)
+        if(alreadyliked){
+            // Already liked → remove user like using id 
+            recipe.likes = recipe.likes.filter((id) => id.toString() !== userId.toString());
+        }
+        else {
+            // Not liked → add user like
+            recipe.likes.push(userId);
+        }
+
+        await recipe.save();
+        
+        res.status(200).json({
+            message: alreadyliked ? 'Recipe unliked' : 'Recipe liked',
+            likes: recipe.likes.length
+          });
+        
+
+    }
+    catch(error) {
+            console.error("Error toggling like:", error);
+            res.status(500).json({ message: "Server error", error: error.message });
+    }
+}
+
+
+
+
+
+
+// route:   POST /api/recipes/:id/comments
+// Add a comment to a recipe
+// private (auth middleware required)
+// param   recipeId, text
+// reqbody text
+
+const addComment = async (req, res) => {
+
+    try {
+
+        const recipeId  = req.params.id;
+        const { text } = req.body;
+        const userId = req.user._id;
+
+        if (!mongoose.Types.ObjectId.isValid(recipeId)) {
+            return res.status(400).json({ message: 'Invalid recipe ID' });
+        }
+
+        if (!text) {    
+            return res.status(400).json({ message: 'Comment text is required' });
+        }
+
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json({ message: 'Invalid user ID' });
+        }
+
+        const recipe = await Recipe.findById(recipeId);
+        if (!recipe) {
+            return res.status(404).json({ message: 'Recipe not found' });
+        }
+
+        const comment = {
+            user: userId,
+            text,
+        };
+
+        recipe.comments.push(comment);
+        await recipe.save();
+
+        res.status(201).json({ message: 'Comment added successfully', comment });
+
+    } catch (error) {
+        
+        console.error("Error adding comment:", error);
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+}
+
+
+
+
+
+// Add a rating and review to a recipe
+// route :  POST /api/recipes/:id/review
+// Private
+// param   recipeId
+// reqbody {rating , review}
+const addReview = async(req,res)=>{
+
+    try {
+        const recipeId = req.params.id
+        const {rating , review} = req.body
+        const userId = req.user._id;
+
+
+        if (!mongoose.Types.ObjectId.isValid(recipeId)) {
+            return res.status(400).json({ message: 'Invalid recipe ID' });
+        }
+
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json({ message: 'Invalid user ID' });
+        }
+
+        // get recipe
+        const recipe = await Recipe.findById(recipeId);
+
+        if (!recipe) {
+            return res.status(404).json({ message: 'Recipe not found' });
+        }
+
+
+        // Check if user already reviewed this recipe
+        const alreadyReviewed = recipe.reviews.find(
+            (r) => r.user.toString() === req.user._id.toString()
+        );
+
+        if (alreadyReviewed) {
+            return res.status(400).json({ message: 'You already reviewed this recipe' });
+        }
+
+
+        const newReview  = {
+            user : userId,
+            rating : Number(rating),
+            review,
+        }
+
+
+        recipe.reviews.push(newReview)
+        await recipe.save();
+
+        res.status(201).json({ message: 'Review added successfully', newReview });
+   
+    } catch (error) {
+        console.error('Error adding review:', error);
+        res.status(500).json({ message: 'Server error' , error: error.message});
+    }
+
+}
+
+
+// route   GET /api/recipes/search/
+// Search only:
+// /api/recipes/search?keyword=pasta
+
+// Filter only:
+// /api/recipes/search?cuisine=Italian&maxCookingTime=30
+
+// Combined search and filter:
+// /api/recipes/search?keyword=pasta&cuisine=Italian&maxTime=30
+///api/recipes/search?keyword=pasta&cuisine=Italian&ingredients=tomato,basil&maxCookingTime=30
+
+//     Search recipes by title, ingredients, or cuisine
+//     public
+// param :  title, ingredients, cuisine (from query params)
+const searchRecipes = async (req, res) => {
+    try {
+      let { keyword, cuisine, ingredients, maxCookingTime } = req.query;
+  
+      const filters = {};
+  
+      keyword = keyword?.toLowerCase();
+      cuisine = cuisine?.toLowerCase();
+      ingredients = ingredients?.toLowerCase();
+  
+      
+      // Keyword search in title, description, or cuisine
+      if (keyword) {
+        filters.$or = [
+          { title: { $regex: keyword, $options: 'i' } },
+          { description: { $regex: keyword, $options: 'i' } },
+          { cuisine: { $regex: keyword, $options: 'i' } },
+        ];
+      }
+  
+      // Cuisine match (case-insensitive)
+      if (cuisine) {
+        filters.cuisine = { $regex: cuisine, $options: 'i' };
+      }
+  
+      // Ingredients filtering (case-insensitive, multiple ingredients)
+      if (ingredients) {
+        const ingredientArray = ingredients
+          .split(',')
+          .map(item => item.trim().toLowerCase());
+  
+        filters['ingredients.name'] = {
+          $in: ingredientArray.map(ingredient => new RegExp(ingredient, 'i'))
+        };
+      }
+  
+      // Cooking time filter
+      if (maxCookingTime) {
+        filters.cookingTime = { $lte: parseInt(maxCookingTime) };
+      }
+  
+      const recipes = await Recipe.find(filters);
+  
+      if (!recipes || recipes.length === 0) {
+        return res.status(404).json({ message: 'No recipes found' });
+      }
+  
+      res.json(recipes);
+  
+    } catch (error) {
+      console.error('Search error:', error);
+      res.status(500).json({ message: 'Server error', error: error.message });
+    }
+  };
+  
+
+
+
+
+module.exports = {
+    createRecipe,
+    getallRecipes,
+    getRecipeById,
+    updaterecipe,
+    deleterecipe,
+    getUserRecipes,
+    toggleLikeRecipe,
+    addComment,
+    addReview,
+    searchRecipes
+}
+
