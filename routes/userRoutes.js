@@ -15,13 +15,17 @@ router.post('/login', LoginUser)
 
 // toggle save recipe
  router.post('/save/:id', auth, toggleSaveRecipe)
+ 
 // get saved recipes
  router.get('/saved', auth, getSavedRecipes)
+
+
 
 // meal plan routes
 router.post('/meal-plan', auth, addMealToPlan);     // Add/update a day's meal
 router.get('/meal-plan', auth, getMealPlan);         // View full week's plan
 router.delete('/meal-plan', auth, clearMealPlan);    // Clear by day or all
+
 
 
 // GET ShoppingList 

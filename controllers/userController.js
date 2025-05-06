@@ -292,53 +292,68 @@ const clearMealPlan = async (req, res) => {
 //  route:   GET /api/users/shopping-list
 //  Private
 const getShoppingList = async (req, res) => {
-    try {
-      const user = await User.findById(req.user._id)
-        .populate('mealPlan.meals.breakfast')
-        .populate('mealPlan.meals.lunch')
-        .populate('mealPlan.meals.dinner')
-        .populate('mealPlan.meals.snacks');
-  
-      if (!user) return res.status(404).json({ message: 'User not found' });
-  
-      const ingredientsMap = {};
-  
-      // Loop over all meals in the meal plan
-      for (const plan of user.mealPlan) {
-        const { breakfast, lunch, dinner, snacks } = plan.meals;
-  
-        const recipes = [breakfast, lunch, dinner, snacks].filter(Boolean);
-  
-        for (const recipe of recipes) {
-          for (const ingredient of recipe.ingredients) {
-            const key = ingredient.name.toLowerCase();
-  
-            if (ingredientsMap[key]) {
-                
-              ingredientsMap[key].quantity.push(ingredient.quantity);
-            } else {
-              ingredientsMap[key] = {
-                name: ingredient.name,
-                quantity: [ingredient.quantity],
-              };
-            }
+  try {
+    const user = await User.findById(req.user._id)
+      .populate('mealPlan.meals.breakfast')
+      .populate('mealPlan.meals.lunch')
+      .populate('mealPlan.meals.dinner')
+      .populate('mealPlan.meals.snacks');
+
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const categorizedIngredients = {};
+
+    // Loop through each day's meal plan
+    for (let i = 0; i < user.mealPlan.length; i++) {
+      const meals = user.mealPlan[i].meals;
+      const allMeals = [meals.breakfast, meals.lunch, meals.dinner, meals.snacks].filter(Boolean);
+
+      // Loop through each recipe in the meals
+      for (let j = 0; j < allMeals.length; j++) {
+        const recipe = allMeals[j];
+
+
+        for (let k = 0; k < recipe.ingredients.length; k++) {
+          const ingredient = recipe.ingredients[k];
+          const nameKey = ingredient.name.toLowerCase();
+          const category = ingredient.category || 'Other';
+
+          // Initialize the category if it doesn't exist
+          if (!categorizedIngredients[category]) {
+            categorizedIngredients[category] = {};
+          }
+          
+          // If the ingredient is already in the map, combine quantities
+          if (categorizedIngredients[category][nameKey]) {
+            categorizedIngredients[category][nameKey].quantity.push(ingredient.quantity);
+          } else {
+            categorizedIngredients[category][nameKey] = {
+              name: ingredient.name,
+              quantity: [ingredient.quantity]
+            };
           }
         }
       }
-  
-      // Convert map to array for response
-      const shoppingList = Object.values(ingredientsMap).map((item) => ({
-        name: item.name,
-        quantity: item.quantity.join(' + '), 
-      }));
-  
-      res.json({ shoppingList });
-  
-    } catch (error) {
-      console.error('Get shopping list error:', error);
-      res.status(500).json({ message: 'Server error', error: error.message });
     }
-  };
+
+    // Build the response array sorted by category
+    const shoppingList = Object.entries(categorizedIngredients)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([category, items]) => ({
+        category,
+        items: Object.values(items).map(item => ({
+          name: item.name,
+          quantity: item.quantity.join(' + ')
+        }))
+      }));
+
+    res.json({ shoppingList });
+
+  } catch (error) {
+    console.error('Get shopping list error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
 
 
 

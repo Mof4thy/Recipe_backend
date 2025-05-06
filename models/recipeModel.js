@@ -11,6 +11,7 @@ const recipeSchema = new mongoose.Schema({
         {
           name: String,
           quantity: String,
+          category: String, 
         }
       ],
     steps: [{ type: String }],
