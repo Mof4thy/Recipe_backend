@@ -386,7 +386,7 @@ const searchRecipes = async (req, res) => {
         .split(",")
         .map((item) => item.trim().toLowerCase());
 
-      filters["ingredients.name"] = {
+      filters["ingredients.category"] = {
         $in: ingredientArray.map((ingredient) => new RegExp(ingredient, "i")),
       };
     }
