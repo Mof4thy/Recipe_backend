@@ -20,7 +20,7 @@ const recipeSchema = new mongoose.Schema({
     cookingTime: { type: Number },
     nutritionalFacts: {
       calories: Number,
-      protein: Number,
+      protein: Number,  
       fat: Number,
       carbs: Number,
     },

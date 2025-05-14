@@ -393,14 +393,13 @@ const searchRecipes = async (req, res) => {
 
     // Cooking time filter
     if (maxCookingTime) {
-      filters.cookingTime = { $lte: parseInt(maxCookingTime) };
+      filters.cookingTime = { $lte: parseInt(maxCookingTime)
+};
     }
 
     const recipes = await Recipe.find(filters);
 
-    if (!recipes || recipes.length === 0) {
-      return res.status(404).json({ message: "No recipes found" });
-    }
+
 
     res.json(recipes);
   } catch (error) {
