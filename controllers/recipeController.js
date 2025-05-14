@@ -450,6 +450,68 @@ const searchRecipes = async (req, res) => {
   
 
 
+//  Save or unsave a recipe
+//  route   POST /api/users/save/:id
+//  Private
+const toggleSaveRecipe = async(req,res)=>{
+
+    try {
+
+        const userId = req.user._id
+        const recipeId = req.params.id
+
+        if (!mongoose.Types.ObjectId.isValid(recipeId)) {
+            return res.status(400).json({ message: 'Invalid recipe ID' });
+        }
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json({ message: 'Invalid user ID' });
+        }
+
+        const user = await User.findById(userId)
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        const alreadySaved = user.savedRecipes.includes(recipeId);
+        if(alreadySaved){
+            user.savedRecipes = user.savedRecipes.filter(
+                (id)=>{ id.toString() !== recipeId.toString }
+            );
+        }
+        else{
+            user.savedRecipes.push(recipeId)
+        }
+        await user.save();
+
+
+        res.status(200).json({
+            message: alreadySaved ? 'Recipe unsaved' : 'Recipe saved',
+            savedRecipes: user.savedRecipes,
+          });
+
+
+    } catch (error) {
+        console.error('Toggle save error:', error);
+        res.status(500).json({ message: 'Server error' , error: error.message  });
+    }
+}
+
+
+
+
+//  Get all saved recipes for a user
+//  route:   GET /api/users/saved
+//  Private
+const getSavedRecipes = async (req, res) => {
+    try {
+      const user = await User.findById(req.user._id).populate('savedRecipes');
+      res.json(user.savedRecipes);
+    } catch (error) {
+      console.error('Get saved recipes error:', error);
+      res.status(500).json({ message: 'Server error',  error: error.message });
+    }
+};
+
+
+
 
 
 module.exports = {
@@ -460,6 +522,8 @@ module.exports = {
     deleterecipe,
     getUserRecipes,
     toggleLikeRecipe,
+    toggleSaveRecipe,
+    getSavedRecipes,
     addComment,
     addReview,
     searchRecipes

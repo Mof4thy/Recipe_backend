@@ -7,6 +7,8 @@ const { createRecipe,
         deleterecipe, 
         getUserRecipes,
         toggleLikeRecipe,
+        toggleSaveRecipe, 
+        getSavedRecipes, 
         addComment,
         addReview,
         searchRecipes }  = require('../controllers/recipeController');
@@ -41,6 +43,13 @@ router.post('/:id/comment', auth, addComment);
 
  // Add a review to a recipe
 router.post('/:id/review', auth, addReview);
+
+
+
+// toggle save recipe
+router.post('/save/:id', auth, toggleSaveRecipe)
+// get saved recipes
+ router.get('/saved', auth, getSavedRecipes)
 
 
 

@@ -1,6 +1,18 @@
 const express= require('express')
 const router = express.Router()
-const { CreateUser, LoginUser , getUserProfile, toggleSaveRecipe, getSavedRecipes, addMealToPlan, getMealPlan, clearMealPlan, getShoppingList , followUser, unfollowUser, getFollowers,getFollowing   } = require('../controllers/userController');
+const { 
+    CreateUser,
+    LoginUser, 
+    getUserProfile, 
+    addMealToPlan, 
+    getMealPlan, 
+    clearMealPlan, 
+    getShoppingList, 
+    followUser, 
+    unfollowUser, 
+    getFollowers,
+    getFollowing } = require('../controllers/userController');
+
 const auth = require('../middleware/authMiddleware')
 
 
@@ -13,11 +25,6 @@ router.post('/login', LoginUser)
 // Get user profile
  router.get('/profile', auth ,getUserProfile) 
 
-// toggle save recipe
- router.post('/save/:id', auth, toggleSaveRecipe)
- 
-// get saved recipes
- router.get('/saved', auth, getSavedRecipes)
 
 
 
@@ -44,10 +51,7 @@ router.get('/:id/followers', getFollowers);
 router.get('/:id/following', getFollowing);
 
 
-// In userRoutes.js
-router.post('/follow-test', (req, res) => {
-    res.json({ message: "Test route works" });
-});
+
 
 
 module.exports = router;
