@@ -1,5 +1,7 @@
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
+
 require("dotenv").config();
 const connectToMongo = require("./dbconfig/dbcon");
 
@@ -31,6 +33,9 @@ async function startserver() {
     app.use("/api/test", testrouter);
     app.use("/api/users", userrouter); // Use the user router
     app.use("/api/recipes", recipesrouter); // Use the recipes router
+
+    // Serve static files from the uploads folder
+    app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
     app.listen(port, () => {
       console.log(`Server running at http://localhost:${port}`);
