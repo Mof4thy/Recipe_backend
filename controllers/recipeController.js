@@ -523,9 +523,22 @@ const toggleSaveRecipe = async (req, res) => {
 //  Private
 const getSavedRecipes = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).populate("savedRecipes");
+    const user = await User.findById(req.user._id).populate({
+      path: 'savedRecipes',
+      populate: {
+        path: 'user',
+        select: 'name email _id'
+      }
+    });
 
-    res.json(user.savedRecipes);
+    // Add isSaved flag to each recipe
+    const recipesWithSaveStatus = user.savedRecipes.map(recipe => {
+      const recipeObj = recipe.toObject();
+      recipeObj.isSaved = true;
+      return recipeObj;
+    });
+
+    res.json(recipesWithSaveStatus);
   } catch (error) {
     console.error("Get saved recipes error:", error);
     res.status(500).json({ message: "Server error", error: error.message });
