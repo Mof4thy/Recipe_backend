@@ -384,11 +384,11 @@ const addReview = async (req, res) => {
     recipe.reviews.push(newReview);
     await recipe.save();
 
-    res.status(201).json({ 
-      message: "Review added successfully", 
+    res.status(201).json({
+      message: "Review added successfully",
       newReview,
       averageRating: recipe.averageRating,
-      totalReviews: recipe.totalReviews
+      totalReviews: recipe.totalReviews,
     });
   } catch (error) {
     console.error("Error adding review:", error);
@@ -451,7 +451,10 @@ const searchRecipes = async (req, res) => {
       filters.cookingTime = { $lte: parseInt(maxCookingTime) };
     }
 
-    const recipes = await Recipe.find(filters);
+    const recipes = await Recipe.find(filters)
+      .populate("user", "name email")
+      .populate("comments.user", "name email age")
+      .populate("reviews.user", "name");
 
     if (!recipes || recipes.length === 0) {
       return res.status(404).json({ message: "No recipes found" });
