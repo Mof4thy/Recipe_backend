@@ -147,6 +147,10 @@ const updaterecipe = async (req, res) => {
         .json({ message: "Not authorized to update this recipe" });
     }
 
+    if (req.file) {
+      updatedFields.image = `/uploads/${req.file.filename}`;
+    }
+
     Object.assign(recipe, updatedFields);
     const updatedRecipe = await recipe.save();
 

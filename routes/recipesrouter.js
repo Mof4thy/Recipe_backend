@@ -38,7 +38,7 @@ router.get("/:id", auth, getRecipeById);
 router.get("/user/:id", auth, getUserRecipes);
 // update and delete a recipe
 // only the owner of the recipe can update or delete it
-router.put("/:id", auth, isRecipeOwner, updaterecipe);
+router.put("/:id", auth, isRecipeOwner, upload.single("image"), updaterecipe);
 router.delete("/:id", auth, isRecipeOwner, deleterecipe);
 
 // toggle Like a recipe

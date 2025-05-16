@@ -159,12 +159,54 @@ PUT /recipes/:id
 ```
 **Headers:**
 - Authorization: Bearer <token>
+- Content-Type: multipart/form-data
 
 **Request Body:**
 ```json
 {
   "title": "Updated Title",
-  "description": "Updated description"
+  "description": "Updated description",
+  "image": <file>,  // Optional: Upload a new image file
+  "ingredients": [   // Optional: Update ingredients
+    {
+      "name": "Updated Ingredient",
+      "quantity": "300g",
+      "category": "Updated Category"
+    }
+  ],
+  "steps": ["Updated step 1", "Updated step 2"],  // Optional: Update steps
+  "cuisine": "Updated Cuisine",                   // Optional: Update cuisine
+  "cookingTime": 45,                             // Optional: Update cooking time
+  "nutritionalFacts": {                          // Optional: Update nutritional facts
+    "calories": 600,
+    "protein": 25,
+    "fat": 20,
+    "carbs": 70
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "_id": "recipe_id",
+  "title": "Updated Title",
+  "description": "Updated description",
+  "image": "/uploads/new_image_filename.jpg",
+  "ingredients": [...],
+  "steps": [...],
+  "cuisine": "Updated Cuisine",
+  "cookingTime": 45,
+  "nutritionalFacts": {...},
+  "user": {
+    "name": "John Doe",
+    "email": "john@example.com"
+  },
+  "likes": [],
+  "comments": [],
+  "reviews": [],
+  "averageRating": 4.5,
+  "totalReviews": 10
 }
 ```
 
