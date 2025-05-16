@@ -496,9 +496,9 @@ const toggleSaveRecipe = async (req, res) => {
 
     const alreadySaved = user.savedRecipes.includes(recipeId);
     if (alreadySaved) {
-      user.savedRecipes = user.savedRecipes.filter((id) => {
-        id.toString() !== recipeId.toString;
-      });
+      user.savedRecipes = user.savedRecipes.filter(
+        (id) => id.toString() !== recipeId.toString()
+      );
     } else {
       user.savedRecipes.push(recipeId);
     }
