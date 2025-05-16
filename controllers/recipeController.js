@@ -55,7 +55,6 @@ const createRecipe = async (req, res) => {
 const getallRecipes = async (req, res) => {
   try {
     const userId = req.user?._id;
-
     const recipes = await Recipe.find({}).populate("user", "name email");
     if (!recipes) {
       return res.status(404).json({ message: "No recipes found" });
@@ -63,12 +62,14 @@ const getallRecipes = async (req, res) => {
     let savedRecipes = [];
     if (userId) {
       const user = await User.findById(userId);
+
       savedRecipes = user.savedRecipes.map((id) => id.toString());
     }
 
     const recipesWithSaveStatus = recipes.map((recipe) => {
       const recipeObj = recipe.toObject();
       recipeObj.isSaved = savedRecipes.includes(recipe._id.toString());
+
       return recipeObj;
     });
 

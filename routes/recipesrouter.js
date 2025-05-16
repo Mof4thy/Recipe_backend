@@ -21,10 +21,10 @@ const auth = require("../middleware/authMiddleware");
 const isRecipeOwner = require("../middleware/isRecipeOwner");
 
 // search recipes
-router.get("/search", searchRecipes);
+router.get("/search",auth, searchRecipes);
 
 router.post("/", auth, createRecipe);
-router.get("/", getallRecipes);
+router.get("/",auth, getallRecipes);
 
 // toggle save recipe
 router.post("/save/:id", auth, toggleSaveRecipe);
