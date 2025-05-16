@@ -267,7 +267,7 @@ const getShoppingList = async (req, res) => {
         category,
         items: Object.values(items).map((item) => ({
           name: item.name,
-          quantity: item.quantity.join(" + "),
+          quantity: item.quantity.length,
         })),
       }));
 
