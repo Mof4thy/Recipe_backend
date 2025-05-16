@@ -1,5 +1,6 @@
 const Recipe = require("../models/recipeModel");
 const mongoose = require("mongoose");
+const User = require("../models/User");
 
 // route:   POST /api/recipes/add
 // Create a new recipe
@@ -53,11 +54,25 @@ const createRecipe = async (req, res) => {
 //  param   recipeId (from request params)
 const getallRecipes = async (req, res) => {
   try {
+    const userId = req.user?._id;
+
     const recipes = await Recipe.find({}).populate("user", "name email");
     if (!recipes) {
       return res.status(404).json({ message: "No recipes found" });
     }
-    res.status(200).json(recipes);
+    let savedRecipes = [];
+    if (userId) {
+      const user = await User.findById(userId);
+      savedRecipes = user.savedRecipes.map((id) => id.toString());
+    }
+
+    const recipesWithSaveStatus = recipes.map((recipe) => {
+      const recipeObj = recipe.toObject();
+      recipeObj.isSaved = savedRecipes.includes(recipe._id.toString());
+      return recipeObj;
+    });
+
+    res.status(200).json(recipesWithSaveStatus);
   } catch (error) {
     console.error("Error fetching recipes:", error);
     res.status(500).json({ message: "Server error", error: error.message });
@@ -72,23 +87,29 @@ const getallRecipes = async (req, res) => {
 const getRecipeById = async (req, res) => {
   try {
     const recipeId = req.params.id;
-
-    console.log(recipeId);
-
+    const userId = req.user?._id;
     if (!mongoose.Types.ObjectId.isValid(recipeId)) {
       return res.status(400).json({ message: "Invalid recipe ID" });
     }
 
     const recipe = await Recipe.findById(recipeId)
       .populate("user", "username email")
-      .populate("comments.user", "username")
+      .populate("comments.user", "name email age") // Include full user details for comments
       .populate("reviews.user", "username");
 
     if (!recipe) {
       return res.status(404).json({ message: "Recipe not found" });
     }
 
-    res.status(200).json(recipe);
+    const response = recipe.toObject();
+    if (userId) {
+      const user = await User.findById(userId);
+      response.isSaved = user.savedRecipes.includes(recipe._id);
+    } else {
+      response.isSaved = false;
+    }
+
+    res.status(200).json(response);
   } catch (error) {
     console.error("Error fetching recipe:", error);
     res.status(500).json({ message: "Server error", error: error.message });
@@ -179,6 +200,7 @@ const deleterecipe = async (req, res) => {
 const getUserRecipes = async (req, res) => {
   try {
     const userId = req.params.id;
+
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({ message: "Invalid user ID" });
     }
@@ -193,7 +215,20 @@ const getUserRecipes = async (req, res) => {
         .status(404)
         .json({ message: "No recipes found for this user" });
     }
-    res.status(200).json(recipes);
+
+    let savedRecipes = [];
+    if (userId) {
+      const user = await User.findById(userId);
+      savedRecipes = user.savedRecipes.map((id) => id.toString());
+    }
+
+    const recipesWithSaveStatus = recipes.map((recipe) => {
+      const recipeObj = recipe.toObject();
+      recipeObj.isSaved = savedRecipes.includes(recipe._id.toString());
+      return recipeObj;
+    });
+
+    res.status(200).json(recipesWithSaveStatus);
   } catch (error) {
     console.error("Error fetching user recipes:", error);
     res.status(500).json({ message: "Server error", error: error.message });
@@ -282,7 +317,17 @@ const addComment = async (req, res) => {
     recipe.comments.push(comment);
     await recipe.save();
 
-    res.status(201).json({ message: "Comment added successfully", comment });
+    // Fetch the comment with populated user data
+    const updatedRecipe = await Recipe.findById(recipeId).populate(
+      "comments.user",
+      "name email age"
+    );
+    const addedComment =
+      updatedRecipe.comments[updatedRecipe.comments.length - 1];
+
+    res
+      .status(201)
+      .json({ message: "Comment added successfully", comment: addedComment });
   } catch (error) {
     console.error("Error adding comment:", error);
     res.status(500).json({ message: "Server error", error: error.message });
@@ -359,6 +404,7 @@ const addReview = async (req, res) => {
 const searchRecipes = async (req, res) => {
   try {
     let { keyword, cuisine, ingredients, maxCookingTime } = req.query;
+    const userId = req.user?._id;
 
     const filters = {};
 
@@ -402,7 +448,19 @@ const searchRecipes = async (req, res) => {
       return res.status(404).json({ message: "No recipes found" });
     }
 
-    res.status(200).json(recipes);
+    let savedRecipes = [];
+    if (userId) {
+      const user = await User.findById(userId);
+      savedRecipes = user.savedRecipes.map((id) => id.toString());
+    }
+
+    const recipesWithSaveStatus = recipes.map((recipe) => {
+      const recipeObj = recipe.toObject();
+      recipeObj.isSaved = savedRecipes.includes(recipe._id.toString());
+      return recipeObj;
+    });
+
+    res.status(200).json(recipesWithSaveStatus);
   } catch (error) {
     console.error("Search error:", error);
     res.status(500).json({ message: "Server error", error: error.message });
@@ -453,6 +511,7 @@ const toggleSaveRecipe = async (req, res) => {
 const getSavedRecipes = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).populate("savedRecipes");
+
     res.json(user.savedRecipes);
   } catch (error) {
     console.error("Get saved recipes error:", error);

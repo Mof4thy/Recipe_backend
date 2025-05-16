@@ -25,7 +25,14 @@ router.get("/search", searchRecipes);
 
 router.post("/", auth, createRecipe);
 router.get("/", getallRecipes);
-router.get("/:id", getRecipeById);
+
+// toggle save recipe
+router.post("/save/:id", auth, toggleSaveRecipe);
+// get saved recipes
+router.get("/saved", auth, getSavedRecipes);
+router.post("/add", auth, upload.single("image"), createRecipe);
+
+router.get("/:id", auth, getRecipeById);
 
 // get all recipes by user
 router.get("/user/:id", auth, getUserRecipes);
@@ -42,11 +49,5 @@ router.post("/:id/comment", auth, addComment);
 
 // Add a review to a recipe
 router.post("/:id/review", auth, addReview);
-
-// toggle save recipe
-router.post("/save/:id", auth, toggleSaveRecipe);
-// get saved recipes
-router.get("/saved", auth, getSavedRecipes);
-router.post("/add", auth, upload.single("image"), createRecipe);
 
 module.exports = router;
