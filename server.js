@@ -6,7 +6,7 @@ require("dotenv").config();
 const connectToMongo = require("./dbconfig/dbcon");
 
 const app = express();
-const port = process.env.PORT || 5000;
+const port = process.env.PORT || 4000;
 
 // // // routers
 const testrouter = require("./routes/test.route");
@@ -18,7 +18,7 @@ async function startserver() {
     await connectToMongo();
     app.use(
       cors({
-        origin: "http://localhost:4200",
+        origin: "http://localhost:4200  ",
         methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         allowedHeaders: ["Content-Type", "Authorization"],
         credentials: true,

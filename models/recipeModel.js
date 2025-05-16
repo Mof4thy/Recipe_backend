@@ -39,10 +39,24 @@ const recipeSchema = new mongoose.Schema({
           review: String,
         },
       ],
+      averageRating: { type: Number, default: 0 },
+      totalReviews: { type: Number, default: 0 }
   },
   
   { timestamps: true }
 );
 
+// Calculate average rating before saving
+recipeSchema.pre('save', function(next) {
+  if (this.reviews.length > 0) {
+    const totalRating = this.reviews.reduce((sum, review) => sum + review.rating, 0);
+    this.averageRating = totalRating / this.reviews.length;
+    this.totalReviews = this.reviews.length;
+  } else {
+    this.averageRating = 0;
+    this.totalReviews = 0;
+  }
+  next();
+});
 
 module.exports = mongoose.model('Recipe', recipeSchema);

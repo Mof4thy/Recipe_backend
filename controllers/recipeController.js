@@ -380,7 +380,12 @@ const addReview = async (req, res) => {
     recipe.reviews.push(newReview);
     await recipe.save();
 
-    res.status(201).json({ message: "Review added successfully", newReview });
+    res.status(201).json({ 
+      message: "Review added successfully", 
+      newReview,
+      averageRating: recipe.averageRating,
+      totalReviews: recipe.totalReviews
+    });
   } catch (error) {
     console.error("Error adding review:", error);
     res.status(500).json({ message: "Server error", error: error.message });

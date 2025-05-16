@@ -147,7 +147,9 @@ GET /recipes/:id
   },
   "likes": [],
   "comments": [],
-  "reviews": []
+  "reviews": [],
+  "averageRating": 4.5,
+  "totalReviews": 10
 }
 ```
 
@@ -223,6 +225,20 @@ POST /recipes/:id/review
 {
   "rating": 5,
   "review": "Excellent recipe!"
+}
+```
+
+**Response:**
+```json
+{
+  "message": "Review added successfully",
+  "newReview": {
+    "user": "user_id",
+    "rating": 5,
+    "review": "Excellent recipe!"
+  },
+  "averageRating": 4.5,
+  "totalReviews": 10
 }
 ```
 
