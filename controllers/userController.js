@@ -298,10 +298,31 @@ const getShoppingList = async (req, res) => {
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([category, items]) => ({
         category,
-        items: Object.values(items).map((item) => ({
-          name: item.name,
-          quantity: item.quantity.length,
-        })),
+        items: Object.values(items).map((item) => {
+          // Parse quantities and group by unit
+          const quantities = {};
+          item.quantity.forEach(qty => {
+            // Extract number and unit using regex
+            const match = qty.match(/^([\d.]+)\s*(.*)$/);
+            if (match) {
+              const [_, amount, unit] = match;
+              quantities[unit] = (quantities[unit] || 0) + parseFloat(amount);
+            } else {
+              // If can't parse, keep original
+              quantities[qty] = 1;
+            }
+          });
+
+          // Format quantities back into strings
+          const mergedQuantity = Object.entries(quantities)
+            .map(([unit, amount]) => unit ? `${amount} ${unit}` : amount)
+            .join(" + ");
+
+          return {
+            name: item.name,
+            quantity: mergedQuantity
+          };
+        }),
       }));
 
     res.json({ shoppingList });
@@ -422,6 +443,40 @@ const getFollowing = async (req, res) => {
   }
 };
 
+//  Remove a follower from a user
+//  route:   DELETE /api/users/follow/:id
+//  Private
+const removefollower = async (req, res) => {
+  const user = req.user;
+  const currentuserid = user.id;
+  const followerid = req.params.id;
+
+  try {
+    if (currentuserid === followerid) {
+      return res.status(400).json({ message: "You can't remove yourself as a follower" });
+    }
+
+    const follower = await User.findById(followerid);
+    if (!follower) {
+      return res.status(404).json({ message: "Follower not found" });
+    }
+    
+    user.followers = user.followers.filter((id) => id.toString() !== followerid);
+    await user.save();
+
+    follower.following = follower.following.filter((id) => id.toString() !== currentuserid);
+    await follower.save();
+
+    res.status(200).json({ message: "Follower removed successfully" });
+  } catch (error) {
+    console.error("Remove follower error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+
+
+
 module.exports = {
   CreateUser,
   LoginUser,
@@ -434,4 +489,5 @@ module.exports = {
   unfollowUser,
   getFollowers,
   getFollowing,
+  removefollower,
 };
