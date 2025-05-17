@@ -175,7 +175,12 @@ const getMealPlan = async (req, res) => {
 //  Private
 const clearMealPlan = async (req, res) => {
   try {
-    const { day, category } = req.body; 
+    const { day, category } = req.query; 
+
+    console.log("DAY", day)
+    console.log("DAY", category)
+
+
     const userId = req.user._id;
 
     if (!mongoose.Types.ObjectId.isValid(userId)) {
@@ -224,7 +229,7 @@ const clearMealPlan = async (req, res) => {
           category: user.category,
         });
       } else {
-        return res.status(404).json({ message: `No ${mealType} found for ${day}` });
+        return res.status(404).json({ message: `No ${category} found for ${day}` }); // Fixed variable name from mealType to category
       }
     }
 
