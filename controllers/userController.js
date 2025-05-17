@@ -265,10 +265,31 @@ const getShoppingList = async (req, res) => {
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([category, items]) => ({
         category,
-        items: Object.values(items).map((item) => ({
-          name: item.name,
-          quantity: item.quantity.length,
-        })),
+        items: Object.values(items).map((item) => {
+          // Parse quantities and group by unit
+          const quantities = {};
+          item.quantity.forEach(qty => {
+            // Extract number and unit using regex
+            const match = qty.match(/^([\d.]+)\s*(.*)$/);
+            if (match) {
+              const [_, amount, unit] = match;
+              quantities[unit] = (quantities[unit] || 0) + parseFloat(amount);
+            } else {
+              // If can't parse, keep original
+              quantities[qty] = 1;
+            }
+          });
+
+          // Format quantities back into strings
+          const mergedQuantity = Object.entries(quantities)
+            .map(([unit, amount]) => unit ? `${amount} ${unit}` : amount)
+            .join(" + ");
+
+          return {
+            name: item.name,
+            quantity: mergedQuantity
+          };
+        }),
       }));
 
     res.json({ shoppingList });
