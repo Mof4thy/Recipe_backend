@@ -56,6 +56,7 @@ const getallRecipes = async (req, res) => {
   try {
     const userId = req.user?._id;
     const recipes = await Recipe.find({}).populate("user", "name email");
+    console.log("REC", recipes);
     if (!recipes) {
       return res.status(404).json({ message: "No recipes found" });
     }
@@ -70,11 +71,15 @@ const getallRecipes = async (req, res) => {
     const recipesWithSaveStatus = recipes.map((recipe) => {
       const recipeObj = recipe.toObject();
       recipeObj.isSaved = savedRecipes.includes(recipe._id.toString());
-      
+
       // Add isFollowed status to the user object
       if (recipeObj.user && userId) {
-        recipeObj.user.isFollowed = following.includes(recipeObj.user._id.toString());
+        recipeObj.user.isFollowed = following.includes(
+          recipeObj.user._id.toString()
+        );
       }
+
+      console.group("Processed", recipeObj);
 
       return recipeObj;
     });
@@ -112,11 +117,13 @@ const getRecipeById = async (req, res) => {
     if (userId) {
       const user = await User.findById(userId);
       response.isSaved = user.savedRecipes.includes(recipe._id);
-      
+
       // Add isFollowed status
       if (response.user && userId.toString() !== response.user._id.toString()) {
-        const following = user.following.map(id => id.toString());
-        response.user.isFollowed = following.includes(response.user._id.toString());
+        const following = user.following.map((id) => id.toString());
+        response.user.isFollowed = following.includes(
+          response.user._id.toString()
+        );
       }
     } else {
       response.isSaved = false;
@@ -236,7 +243,7 @@ const getUserRecipes = async (req, res) => {
     let savedRecipes = [];
     let following = [];
     const currentUserId = req.user._id;
-    
+
     if (currentUserId) {
       const user = await User.findById(currentUserId);
       savedRecipes = user.savedRecipes.map((id) => id.toString());
@@ -246,12 +253,14 @@ const getUserRecipes = async (req, res) => {
     const recipesWithSaveStatus = recipes.map((recipe) => {
       const recipeObj = recipe.toObject();
       recipeObj.isSaved = savedRecipes.includes(recipe._id.toString());
-      
+
       // Add isFollowed status to user object
       if (recipeObj.user && currentUserId) {
-        recipeObj.user.isFollowed = following.includes(recipeObj.user._id.toString());
+        recipeObj.user.isFollowed = following.includes(
+          recipeObj.user._id.toString()
+        );
       }
-      
+
       return recipeObj;
     });
 
@@ -494,12 +503,14 @@ const searchRecipes = async (req, res) => {
     const recipesWithSaveStatus = recipes.map((recipe) => {
       const recipeObj = recipe.toObject();
       recipeObj.isSaved = savedRecipes.includes(recipe._id.toString());
-      
+
       // Add isFollowed status to the user object
       if (recipeObj.user && userId) {
-        recipeObj.user.isFollowed = following.includes(recipeObj.user._id.toString());
+        recipeObj.user.isFollowed = following.includes(
+          recipeObj.user._id.toString()
+        );
       }
-      
+
       return recipeObj;
     });
 
@@ -555,26 +566,31 @@ const getSavedRecipes = async (req, res) => {
   try {
     const userId = req.user._id;
     const user = await User.findById(userId).populate({
-      path: 'savedRecipes',
+      path: "savedRecipes",
       populate: {
-        path: 'user',
-        select: 'name email _id'
-      }
+        path: "user",
+        select: "name email _id",
+      },
     });
 
     // Get user's following list
-    const following = user.following.map(id => id.toString());
+    const following = user.following.map((id) => id.toString());
 
     // Add isSaved flag to each recipe
-    const recipesWithSaveStatus = user.savedRecipes.map(recipe => {
+    const recipesWithSaveStatus = user.savedRecipes.map((recipe) => {
       const recipeObj = recipe.toObject();
       recipeObj.isSaved = true;
-      
+
       // Add isFollowed status to the recipe author
-      if (recipeObj.user && userId.toString() !== recipeObj.user._id.toString()) {
-        recipeObj.user.isFollowed = following.includes(recipeObj.user._id.toString());
+      if (
+        recipeObj.user &&
+        userId.toString() !== recipeObj.user._id.toString()
+      ) {
+        recipeObj.user.isFollowed = following.includes(
+          recipeObj.user._id.toString()
+        );
       }
-      
+
       return recipeObj;
     });
 

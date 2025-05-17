@@ -175,7 +175,7 @@ const getMealPlan = async (req, res) => {
 //  Private
 const clearMealPlan = async (req, res) => {
   try {
-    const { day } = req.body; // Specify the day to delete
+    const { day, category } = req.body; 
     const userId = req.user._id;
 
     if (!mongoose.Types.ObjectId.isValid(userId)) {
@@ -185,19 +185,52 @@ const clearMealPlan = async (req, res) => {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    if (day) {
-      // Remove meal plan for the specific day
-      user.mealPlan = user.mealPlan.filter((meal) => meal.day !== day);
-    } else {
-      // Clear the entire meal plan if no day is specified
+    if (!day) {
       user.mealPlan = [];
+      await user.save();
+      return res.json({
+        message: "Meal plan cleared successfully",
+        category: user.category,
+      });
+    }
+    
+    if (day && !category) {
+      user.mealPlan = user.mealPlan.filter((meal) => meal.day !== day);
+      await user.save();
+      return res.json({
+        message: `Meal plan for ${day} cleared successfully`,
+        mealPlan: user.mealPlan,
+      });
+    }
+
+    if (day && category) {
+      const mealPlanDay = user.mealPlan.find((meal) => meal.day === day);
+      
+      if (!mealPlanDay) {
+        return res.status(404).json({ message: `No meal plan found for ${day}` });
+      }
+
+      if (!['breakfast', 'lunch', 'dinner', 'snacks'].includes(category)) {
+        return res.status(400).json({ 
+          message: "Invalid meal type. Must be breakfast, lunch, dinner, or snacks" 
+        });
+      }
+
+      if (mealPlanDay.meals[category]) {
+        mealPlanDay.meals[category] = null;
+        await user.save();
+        return res.json({
+          message: `${category} for ${day} cleared successfully`,
+          category: user.category,
+        });
+      } else {
+        return res.status(404).json({ message: `No ${mealType} found for ${day}` });
+      }
     }
 
     await user.save();
     res.json({
-      message: day
-        ? `Meal plan for ${day} cleared successfully`
-        : "Meal plan cleared successfully",
+      message: "Meal plan updated successfully",
       mealPlan: user.mealPlan,
     });
   } catch (error) {
