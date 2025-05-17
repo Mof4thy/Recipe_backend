@@ -102,9 +102,9 @@ const getRecipeById = async (req, res) => {
     }
 
     const recipe = await Recipe.findById(recipeId)
-      .populate("user", "username email")
+      .populate("user", "name email")
       .populate("comments.user", "name email age") // Include full user details for comments
-      .populate("reviews.user", "username");
+      .populate("reviews.user", "name");
 
     if (!recipe) {
       return res.status(404).json({ message: "Recipe not found" });
