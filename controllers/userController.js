@@ -389,6 +389,40 @@ const getFollowing = async (req, res) => {
   }
 };
 
+//  Remove a follower from a user
+//  route:   DELETE /api/users/follow/:id
+//  Private
+const removefollower = async (req, res) => {
+  const user = req.user;
+  const currentuserid = user.id;
+  const followerid = req.params.id;
+
+  try {
+    if (currentuserid === followerid) {
+      return res.status(400).json({ message: "You can't remove yourself as a follower" });
+    }
+
+    const follower = await User.findById(followerid);
+    if (!follower) {
+      return res.status(404).json({ message: "Follower not found" });
+    }
+    
+    user.followers = user.followers.filter((id) => id.toString() !== followerid);
+    await user.save();
+
+    follower.following = follower.following.filter((id) => id.toString() !== currentuserid);
+    await follower.save();
+
+    res.status(200).json({ message: "Follower removed successfully" });
+  } catch (error) {
+    console.error("Remove follower error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+
+
+
 module.exports = {
   CreateUser,
   LoginUser,
@@ -401,4 +435,5 @@ module.exports = {
   unfollowUser,
   getFollowers,
   getFollowing,
+  removefollower,
 };

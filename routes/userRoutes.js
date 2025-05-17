@@ -11,7 +11,9 @@ const {
     followUser, 
     unfollowUser, 
     getFollowers,
-    getFollowing } = require('../controllers/userController');
+    getFollowing,
+    removefollower
+ } = require('../controllers/userController');
 
 const auth = require('../middleware/authMiddleware')
 
@@ -44,6 +46,7 @@ router.get('/shoppinglist', auth, getShoppingList);
 // follow and unfollow oass user id to follow in the body
 router.post('/follow', auth, followUser);
 router.post('/unfollow', auth, unfollowUser);
+router.delete('/removefollower/:id', auth, removefollower);
 
 
 // get followers and following by user id
