@@ -55,7 +55,9 @@ const createRecipe = async (req, res) => {
 const getallRecipes = async (req, res) => {
   try {
     const userId = req.user?._id;
-    const recipes = await Recipe.find({}).populate("user", "name email");
+    const recipes = await Recipe.find({})
+      .populate("user", "name email")
+      .populate("reviews.user", "name email");
     if (!recipes) {
       return res.status(404).json({ message: "No recipes found" });
     }
@@ -222,10 +224,9 @@ const getUserRecipes = async (req, res) => {
       return res.status(400).json({ message: "Invalid user ID" });
     }
 
-    const recipes = await Recipe.find({ user: userId }).populate(
-      "user",
-      "name email"
-    );
+    const recipes = await Recipe.find({ user: userId })
+      .populate("user", "name email")
+      .populate("reviews.user", "name email");
 
     if (!recipes || recipes.length === 0) {
       return res
@@ -407,9 +408,16 @@ const addReview = async (req, res) => {
     recipe.reviews.push(newReview);
     await recipe.save();
 
+    // Fetch the populated review data
+    const updatedRecipe = await Recipe.findById(recipeId)
+      .populate("reviews.user", "name email");
+    
+    // Get the newly added review
+    const addedReview = updatedRecipe.reviews[updatedRecipe.reviews.length - 1];
+
     res.status(201).json({
       message: "Review added successfully",
-      newReview,
+      review: addedReview,
       averageRating: recipe.averageRating,
       totalReviews: recipe.totalReviews,
     });
@@ -477,7 +485,7 @@ const searchRecipes = async (req, res) => {
     const recipes = await Recipe.find(filters)
       .populate("user", "name email")
       .populate("comments.user", "name email age")
-      .populate("reviews.user", "name");
+      .populate("reviews.user", "name email");
 
     if (!recipes || recipes.length === 0) {
       return res.status(404).json({ message: "No recipes found" });
@@ -556,10 +564,16 @@ const getSavedRecipes = async (req, res) => {
     const userId = req.user._id;
     const user = await User.findById(userId).populate({
       path: 'savedRecipes',
-      populate: {
-        path: 'user',
-        select: 'name email _id'
-      }
+      populate: [
+        {
+          path: 'user',
+          select: 'name email _id'
+        },
+        {
+          path: 'reviews.user',
+          select: 'name email'
+        }
+      ]
     });
 
     // Get user's following list
